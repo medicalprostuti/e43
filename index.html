@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "You must cut ___ your expenditure",
+          options: {
+            a: "off",
+            b: "down",
+            c: "up",
+            d: "out",
+          },
+          correct: "b",
+          explanation:
+            "'Cut down' means to reduce the amount or quantity of something. 'Cut off' means to separate completely. 'Cut up' means to cut into small pieces. 'Cut out' means to remove or stop doing something entirely. In the context of expenditure, 'cut down' is the most appropriate phrasal verb.",
+        },
+        {
+          id: 2,
+          question: "'Take one to task' means-",
+          options: {
+            a: "to question",
+            b: "to rebuke",
+            c: "to flatter",
+            d: "to praise",
+          },
+          correct: "b",
+          explanation:
+            "The idiom 'take someone to task' means to reprimand or rebuke someone severely for their actions or performance.",
+        },
+        {
+          id: 3,
+          question: "'To fight shy of means-",
+          options: {
+            a: "to adopt",
+            b: "to snatch",
+            c: "to quarrel",
+            d: "to avoid",
+          },
+          correct: "d",
+          explanation:
+            "The idiom 'fight shy of' means to avoid something or someone due to reluctance or apprehension.",
+        },
+        {
+          id: 4,
+          question: "'You need not ___ the secret from me.'",
+          options: {
+            a: "hold back",
+            b: "held on",
+            c: "hold off",
+            d: "hold in",
+          },
+          correct: "a",
+          explanation:
+            "'Hold back' means to refrain from telling something or to keep something secret. 'Held on' means to cling to something. 'Hold off' means to delay. 'Hold in' means to control oneself. In this context, 'hold back' is the correct phrasal verb to imply not keeping a secret.",
+        },
+        {
+          id: 5,
+          question:
+            'He "passed himself off" as a noble man. The words in quotation marks mean-',
+          options: {
+            a: "was regarded as",
+            b: "was looked upon",
+            c: "pretended to be",
+            d: "was thought to be",
+          },
+          correct: "c",
+          explanation:
+            "The phrasal verb 'pass oneself off as' means to pretend to be someone or something else, often to deceive. It implies a deliberate act of misrepresentation.",
+        },
+        {
+          id: 6,
+          question: "Raju is someone you can ___ your confidence.",
+          options: {
+            a: "take into",
+            b: "get into",
+            c: "build up",
+            d: "boost up",
+          },
+          correct: "a",
+          explanation:
+            "The idiom 'take someone into your confidence' means to share a secret or private information with someone because you trust them. 'Get into confidence' is not a standard idiom in this context. 'Build up' and 'boost up' relate to increasing something, not sharing secrets.",
+        },
+        {
+          id: 7,
+          question: "My nephew ___ chicken pox this weekend.",
+          options: {
+            a: "came round with",
+            b: "came along with",
+            c: "came down with",
+            d: "came over with",
+          },
+          correct: "c",
+          explanation:
+            "'Come down with' means to become ill with a particular disease. It's a common phrasal verb used to describe the onset of an illness.",
+        },
+        {
+          id: 8,
+          question: "You can ___ Zaman to get the job done.",
+          options: {
+            a: "call off",
+            b: "hold on",
+            c: "give in",
+            d: "count on",
+          },
+          correct: "d",
+          explanation:
+            "'Count on' means to rely on or depend on someone or something with confidence. It signifies trust in someone's ability or reliability.",
+        },
+        {
+          id: 9,
+          question: "Come ___, she will not change her mind.",
+          options: {
+            a: "whatever",
+            b: "what may",
+            c: "which may",
+            d: "off it",
+          },
+          correct: "b",
+          explanation:
+            "The phrase 'come what may' is an idiom meaning whatever happens, regardless of any difficulties or obstacles. It implies determination or certainty despite potential challenges.",
+        },
+        {
+          id: 10,
+          question: "The Bangladesh cricket team ___ victory against England.",
+          options: {
+            a: "bounced up",
+            b: "turned up",
+            c: "bounced back",
+            d: "put across",
+          },
+          correct: "c",
+          explanation:
+            "'Bounce back' means to recover quickly from a setback, difficulty, or defeat. In sports, it implies a strong recovery after a poor performance or loss. 'Bounced up' and 'turned up' don't fit the context. 'Put across' means to communicate effectively.",
+        },
+        {
+          id: 11,
+          question:
+            "Tania has agreed to ___ the condition of my ancestral home every now and then.",
+          options: {
+            a: "check on",
+            b: "check up on",
+            c: "check out",
+            d: "check in",
+          },
+          correct: "a",
+          explanation:
+            "'Check on' means to ascertain the state or condition of someone or something, often to ensure their well-being or proper functioning. 'Check up on' is similar but can imply a more thorough investigation or monitoring. 'Check out' means to investigate or to leave a hotel. 'Check in' means to register at a hotel or airport. Given the context of a home, 'check on' is most suitable for periodically assessing its condition.",
+        },
+        {
+          id: 12,
+          question:
+            "They were ___ space-suits and taken to the space shuttle launch pad by bus.",
+          options: {
+            a: "dressed in",
+            b: "dressed on",
+            c: "dressed for",
+            d: "dressed with",
+          },
+          correct: "a",
+          explanation:
+            "When describing the clothing someone is wearing, the phrase 'dressed in' is used. It indicates that the person is wearing a particular type of attire.",
+        },
+        {
+          id: 13,
+          question:
+            "Try to talk ___ other members of the club to find out what they ___ are ___ advantages and disadvantages here.",
+          options: {
+            a: "to, believe, the",
+            b: "with, believe, the",
+            c: "with, used to believe, no article",
+            d: "to, believe, no article",
+          },
+          correct: "a",
+          explanation:
+            "'Talk to' is used when addressing someone directly or having a conversation with them. 'Believe' is the correct verb tense for their current opinion. 'The advantages and disadvantages' is the correct phrase because it refers to specific, known advantages and disadvantages in that context.",
+        },
+        {
+          id: 14,
+          question: "I took ___ walking, hoping ___ lose some weight.",
+          options: {
+            a: "to, at",
+            b: "for, to",
+            c: "in, to",
+            d: "to, to",
+          },
+          correct: "d",
+          explanation:
+            "'Take to' means to start doing something regularly or to develop a habit. 'Hoping to' is a common construction to express the purpose or goal of an action. Both fit the context of starting to walk with the aim of losing weight.",
+        },
+        {
+          id: 15,
+          question: "Trees have ___ off their leaves.",
+          options: {
+            a: "thrown",
+            b: "fallen",
+            c: "cast",
+            d: "put",
+          },
+          correct: "c",
+          explanation:
+            "'Cast off' is a specific and idiomatic phrasal verb meaning to shed, discard, or get rid of something. It is commonly used for trees shedding leaves or animals shedding skin.",
+        },
+        {
+          id: 16,
+          question:
+            "Climate shifts disrupt farming and ___ thousands of species of animals and plants.",
+          options: {
+            a: "make up",
+            b: "wear off",
+            c: "wipe out",
+            d: "set back",
+          },
+          correct: "c",
+          explanation:
+            "'Wipe out' means to destroy completely or to eliminate. In this context, climate shifts destroying species, 'wipe out' is the appropriate phrasal verb.",
+        },
+        {
+          id: 17,
+          question:
+            "I need to find some chemical that will ___ the weeds in the garden.",
+          options: {
+            a: "keep off",
+            b: "keep out",
+            c: "keep down",
+            d: "keep on",
+          },
+          correct: "c",
+          explanation:
+            "'Keep down' means to suppress, control, or reduce the growth or amount of something. In the context of weeds, it means to prevent them from growing excessively. 'Keep off' means to stay away from. 'Keep out' means to prevent from entering. 'Keep on' means to continue.",
+        },
+        {
+          id: 18,
+          question:
+            "I don't know how you ___ with such noisy brothers. It would drive me crazy.",
+          options: {
+            a: "put up",
+            b: "put away",
+            c: "clear up",
+            d: "bring up",
+          },
+          correct: "a",
+          explanation:
+            "'Put up with' means to tolerate or endure something unpleasant. It perfectly fits the context of tolerating noisy brothers.",
+        },
+        {
+          id: 19,
+          question: "When the war broke ___ my father joined the army.",
+          options: {
+            a: "out",
+            b: "at",
+            c: "off",
+            d: "in",
+          },
+          correct: "a",
+          explanation:
+            "'Break out' means to start suddenly and often violently, typically used for wars, fires, or epidemics. It's the correct phrasal verb for the beginning of a war.",
+        },
+        {
+          id: 20,
+          question: "I hope that the rain will ___ for our picnic tomorrow.",
+          options: {
+            a: "keep off",
+            b: "stay out",
+            c: "stay away",
+            d: "set back",
+          },
+          correct: "a",
+          explanation:
+            "'Keep off' (in the context of weather) means to stay away or refrain from falling. It is commonly used when hoping for rain to stop or not start.",
+        },
+        {
+          id: 21,
+          question: "They ___ my proposal.",
+          options: {
+            a: "turned away",
+            b: "turned down",
+            c: "turned out",
+            d: "turned off",
+          },
+          correct: "b",
+          explanation:
+            "'Turn down' means to refuse or reject an offer, request, or proposal. It's the correct phrasal verb for rejecting a proposal.",
+        },
+        {
+          id: 22,
+          question: "Never put ___ till tomorrow what you can do today.",
+          options: {
+            a: "put off",
+            b: "put down",
+            c: "put up",
+            d: "put up with",
+          },
+          correct: "a",
+          explanation:
+            "'Put off' means to postpone or delay something. This is a common saying advising against procrastination.",
+        },
+        {
+          id: 23,
+          question: "We must ___ the poor flood victims.",
+          options: {
+            a: "reach out to",
+            b: "live up to",
+            c: "put up with",
+            d: "make up for",
+          },
+          correct: "a",
+          explanation:
+            "'Reach out to' means to offer help, support, or communication to someone, especially those in need. It's appropriate for helping flood victims.",
+        },
+        {
+          id: 24,
+          question:
+            "Which of the following is the phrasal verb 'to submit a document'?",
+          options: {
+            a: "hand in",
+            b: "put in",
+            c: "bring in",
+            d: "set in",
+          },
+          correct: "a",
+          explanation:
+            "'Hand in' means to submit or give a document, assignment, or item to an authority or person in charge. 'Put in' can have various meanings, but not specifically 'submit a document'. 'Bring in' means to introduce or earn. 'Set in' means to begin or establish.",
+        },
+        {
+          id: 25,
+          question: "'I could not ___ the meaning of the passage.'",
+          options: {
+            a: "make of",
+            b: "make in",
+            c: "make up",
+            d: "make out",
+          },
+          correct: "d",
+          explanation:
+            "'Make out' means to understand, perceive, or decipher something, especially if it's difficult to see or hear. In this context, it refers to understanding the meaning of a passage.",
+        },
+        {
+          id: 26,
+          question: "I ran into my teacher at the wedding last night.",
+          options: {
+            a: "I met",
+            b: "I showed my respect",
+            c: "I talked to",
+            d: "I avoided",
+          },
+          correct: "a",
+          explanation:
+            "The idiom 'run into' means to meet someone unexpectedly or by chance. It signifies an unplanned encounter.",
+        },
+        {
+          id: 27,
+          question: "'Put up with' means-",
+          options: {
+            a: "Be patient",
+            b: "Complain",
+            c: "Tolerate",
+            d: "Hate",
+          },
+          correct: "c",
+          explanation:
+            "'Put up with' means to tolerate, endure, or accept something unpleasant or annoying without complaining.",
+        },
+        {
+          id: 28,
+          question:
+            "The sales representatives were asked to go over the figures in their reports before the conference.",
+          options: {
+            a: "Outline",
+            b: "Revise",
+            c: "Review",
+            d: "Calculate",
+          },
+          correct: "c",
+          explanation:
+            "The phrasal verb 'go over' means to examine, review, or study something carefully and in detail. It implies a thorough check of the figures.",
+        },
+        {
+          id: 29,
+          question:
+            "Before taking such a test, one had better brush up on his/her vocabulary.",
+          options: {
+            a: "Relate",
+            b: "Translate",
+            c: "Revise",
+            d: "Review",
+          },
+          correct: "c",
+          explanation:
+            "'Brush up on' means to refresh one's knowledge or skill in something, typically something that has been learned before but not used recently. 'Revise' (in British English) or 'review' (in American English) conveys a similar meaning of studying something again to improve one's knowledge.",
+        },
+        {
+          id: 30,
+          question:
+            "'The strike was withdrawn'. Which group verb can replace the underlined word?",
+          options: {
+            a: "call off",
+            b: "break up",
+            c: "put down",
+            d: "put out",
+          },
+          correct: "a",
+          explanation:
+            "'Call off' means to cancel something that was planned or arranged, such as a strike or an event. It perfectly replaces 'withdrawn' in this context.",
+        },
+        {
+          id: 31,
+          question:
+            "Choose the best alternative for the underlined. He went back on his promise of voting for me.",
+          options: {
+            a: "wthdrew",
+            b: "forgot",
+            c: "reinforced",
+            d: "support",
+          },
+          correct: "a",
+          explanation:
+            "The idiom 'go back on (one's promise)' means to fail to keep a promise or agreement; to withdraw from an agreement. 'Withdrew' directly reflects this meaning.",
+        },
+        {
+          id: 32,
+          question: "The submarine dipped to avoid ___ by the enemy plane.",
+          options: {
+            a: "see",
+            b: "seeing",
+            c: "being seen",
+            d: "seen",
+          },
+          correct: "c",
+          explanation:
+            "The phrase 'to avoid being seen' uses the passive infinitive structure, which is appropriate when the subject (the submarine) is the one being acted upon (seen by the enemy plane). It means to prevent the act of being seen.",
+        },
+        {
+          id: 33,
+          question:
+            "Fill in the blank: As she was talking, he suddenly broke ___ saying, 'That's a lie!'",
+          options: {
+            a: "off",
+            b: "in",
+            c: "down",
+            d: "into",
+          },
+          correct: "b",
+          explanation:
+            "'Break in' (or 'break into') means to interrupt a conversation or activity. In this context, he interrupted her talking. 'Break off' means to stop talking abruptly. 'Break down' means to lose control emotionally or to cease functioning. 'Break into' can also mean to enter illegally.",
+        },
+        {
+          id: 34,
+          question: "'To do away with' means-",
+          options: {
+            a: "to repeat",
+            b: "to start",
+            c: "to get rid of",
+            d: "to drive off",
+          },
+          correct: "c",
+          explanation:
+            "The idiom 'do away with' means to abolish, get rid of, or discard something. It implies removing or eliminating something completely.",
+        },
+        {
+          id: 35,
+          question: "The expression 'take into account' means-",
+          options: {
+            a: "count numbers",
+            b: "consider",
+            c: "think seriously",
+            d: "assess",
+          },
+          correct: "b",
+          explanation:
+            "The idiom 'take into account' means to consider something as a factor or element when making a decision or judgment.",
+        },
+        {
+          id: 36,
+          question:
+            "While living in poverty, the poet had to ___ a great deal of sufferings.",
+          options: {
+            a: "see through",
+            b: "put up with",
+            c: "get off",
+            d: "fall back",
+          },
+          correct: "b",
+          explanation:
+            "'Put up with' means to tolerate or endure something unpleasant. It perfectly fits the context of enduring sufferings due to poverty.",
+        },
+        {
+          id: 37,
+          question:
+            "He may call on the mayor tomorrow. Here, 'call on' means to-",
+          options: {
+            a: "insist",
+            b: "telephone",
+            c: "assist",
+            d: "pay a visit",
+          },
+          correct: "d",
+          explanation:
+            "The phrasal verb 'call on' (when referring to a person) means to pay a visit to someone. 'Call at' is used for places.",
+        },
+        {
+          id: 38,
+          question:
+            "What is the meaning of the underlined phrasal verb in 'Mr. Zaman tore up the letter after reading it'?",
+          options: {
+            a: "Stored",
+            b: "Destroyed",
+            c: "Folded",
+            d: "Hid",
+          },
+          correct: "b",
+          explanation:
+            "'Tore up' (past tense of 'tear up') means to tear something into many pieces, thereby destroying it. It implies rendering something unusable or illegible.",
+        },
+        {
+          id: 39,
+          question:
+            "Please do not ___ unpleasant issues during dinner. The right phrasal verb is:-",
+          options: {
+            a: "bring up",
+            b: "give in",
+            c: "bring down",
+            d: "give up",
+          },
+          correct: "a",
+          explanation:
+            "'Bring up' means to introduce a topic or subject into a conversation. It's appropriate for discussing issues during dinner. 'Give in' means to surrender. 'Bring down' means to cause to fall. 'Give up' means to surrender or stop trying.",
+        },
+        {
+          id: 40,
+          question: "His pride has ___ his ruin.",
+          options: {
+            a: "brought up",
+            b: "brought down",
+            c: "brought about",
+            d: "brought around",
+          },
+          correct: "c",
+          explanation:
+            "'Bring about' means to cause something to happen or to make something occur. It signifies that pride was the cause of his ruin.",
+        },
+        {
+          id: 41,
+          question: "The factory turns ___ fifty tons of fertilizer a day.",
+          options: {
+            a: "out",
+            b: "up",
+            c: "over",
+            d: "on",
+          },
+          correct: "a",
+          explanation:
+            "'Turn out' means to produce or manufacture something. It's commonly used in the context of factories and production. 'Turn up' means to appear or increase. 'Turn over' means to flip or consider. 'Turn on' means to activate.",
+        },
+        {
+          id: 42,
+          question:
+            "That evening ___ to be the most unforgettable evening of my life.",
+          options: {
+            a: "turned out",
+            b: "looked around",
+            c: "passed away",
+            d: "fell back on",
+          },
+          correct: "a",
+          explanation:
+            "'Turn out' means to prove to be the case or to happen in a particular way. It describes how something eventually became known or resulted. In this case, the evening proved to be unforgettable.",
+        },
+        {
+          id: 43,
+          question: "The captain left the boat, because it ___",
+          options: {
+            a: "turned down",
+            b: "turned up",
+            c: "turned bottom",
+            d: "turned over",
+          },
+          correct: "d",
+          explanation:
+            "'Turned over' means to capsize or overturn, which would be a reason for the captain to leave the boat. 'Turned down' means rejected. 'Turned up' means appeared. 'Turned bottom' is not a standard phrasal verb.",
+        },
+        {
+          id: 44,
+          question: "In spite of my requests, he did not ___",
+          options: {
+            a: "give in",
+            b: "fall in",
+            c: "get off",
+            d: "give forth",
+          },
+          correct: "a",
+          explanation:
+            "'Give in' means to yield or surrender, especially after resisting for a period. It implies that despite requests, he refused to concede or agree.",
+        },
+        {
+          id: 45,
+          question: "Explain the meaning of 'Bring to pass'.",
+          options: {
+            a: "Cause to destroy",
+            b: "Cause to happen",
+            c: "Cause to carry out",
+            d: "Cause to convince",
+          },
+          correct: "b",
+          explanation:
+            "The idiom 'bring to pass' means to cause something to happen or come about. It implies making something occur or materialize.",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
